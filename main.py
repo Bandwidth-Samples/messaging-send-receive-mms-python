@@ -1,5 +1,4 @@
 import os
-
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from bandwidth.bandwidth_client import BandwidthClient
@@ -74,8 +73,9 @@ async def handle_inbound(request: Request):
         print("Message type does not match endpoint. This endpoint is used for inbound messages only.\nOutbound message callbacks should be sent to /callbacks/outbound/messaging.")
         return 200
 
-    print("From: {}\nTo: {}\nText: {}".format(inbound_body['message']['from'], inbound_body['message']['to'][0],
-                                              inbound_body['message']['text']))
+    message = inbound_body['message']
+    print(f"From: {message['from']}\nTo: {message['to'][0]}\nText: {message['text']}")
+
     if "media" not in inbound_body['message']:
         print("No media attached")
         return 200
