@@ -70,24 +70,24 @@ async def handle_inbound(request: Request):
     inbound_body_array = await request.json()
     inbound_body = inbound_body_array[0]
     print(inbound_body['description'])
-    if inbound_body['type'] == "message-received":
-        print("From: {}\nTo: {}\nText: {}".format(inbound_body['message']['from'], inbound_body['message']['to'][0],
-                                                  inbound_body['message']['text']))
-        if "media" in inbound_body['message']:
-            for media in inbound_body['message']['media']:
-                media_id = media.split("/")[-3:]
-                print(media_id[-1])
-                if ".xml" in media_id[-1]:
-                    pass
-                else:
-                    filename = "./image" + media_id[-1][media_id[-1].find('.'):]
-                    print(filename)
-                    downloaded_media = messaging_client.get_media(account_id, media_id).body
-                    img_file = open(filename, "wb")
-                    img_file.write(downloaded_media)
-                    img_file.close()
-    else:
+    if inbound_body['type'] != "message-received":
         print("Message type does not match endpoint. This endpoint is used for inbound messages only.\nOutbound message callbacks should be sent to /callbacks/outbound/messaging.")
+        return 200
+
+    print("From: {}\nTo: {}\nText: {}".format(inbound_body['message']['from'], inbound_body['message']['to'][0],
+                                              inbound_body['message']['text']))
+    if "media" not in inbound_body['message']:
+        print("No media attached")
+        return 200
+
+    for media in inbound_body['message']['media']:
+        media_id = media.split("/")[-3:]
+        if ".xml" not in media_id[-1]:
+            filename = "./image" + media_id[-1][media_id[-1].find('.'):]
+            downloaded_media = messaging_client.get_media(account_id, media_id).body
+            img_file = open(filename, "wb")
+            img_file.write(downloaded_media)
+            img_file.close()
 
     return 200
 
