@@ -1,61 +1,71 @@
 import os
+import json
+
+# ***************needs to be changed when sdk becomes python package
+import sys
+sys.path.insert(0, 'C:/Users/ckoegel/Documents/sdks/python-v1')
+import openapi_client
+from openapi_client.api.messages_api import MessagesApi
+from openapi_client.api.media_api import MediaApi
+from openapi_client.model.message_request import MessageRequest
+from openapi_client.model.bandwidth_callback_message import BandwidthCallbackMessage
+# ---------------------------------------------------
+
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
-from bandwidth.bandwidth_client import BandwidthClient
-from bandwidth.messaging.models.message_request import MessageRequest
 
+
+BW_NUMBER = os.environ.get('BW_NUMBER')
 BW_USERNAME = os.environ.get('BW_USERNAME')
 BW_PASSWORD = os.environ.get('BW_PASSWORD')
-BW_NUMBER = os.environ.get('BW_NUMBER')
 BW_ACCOUNT_ID = os.environ.get('BW_ACCOUNT_ID')
 BW_MESSAGING_APPLICATION_ID = os.environ.get('BW_MESSAGING_APPLICATION_ID')
 
 
-bandwidth_client = BandwidthClient(
-    messaging_basic_auth_user_name=BW_USERNAME,
-    messaging_basic_auth_password=BW_PASSWORD
-)
-messaging_client = bandwidth_client.messaging_client.client
-
-account_id = BW_ACCOUNT_ID
-
-
-class CreateBody(BaseModel):
+class CreateBody(BaseModel):    # model for the received json body to create a message
     to: str
     text: str
 
 
-class InboundBody(BaseModel):
-    type: str
-    description: str
-    message: dict
+configuration = openapi_client.Configuration(     # needs to be updated*********  # Configure HTTP basic authorization: httpBasic
+    username=BW_USERNAME,
+    password=BW_PASSWORD
+)
+
+
+api_client = openapi_client.ApiClient(configuration)  # needs to be updated*********
+messages_api_instance = MessagesApi(api_client) # needs to be updated*********
+media_api_instance = MediaApi(api_client)   # needs to be updated*********
 
 
 app = FastAPI()
 
 
-@app.post('/callbacks/outbound/messaging')
-def handle_outbound_message(create_body: CreateBody):
-    body = MessageRequest()
-    body.application_id = BW_MESSAGING_APPLICATION_ID
-    body.to = [create_body.to]
-    body.mfrom = BW_NUMBER
-    body.text = create_body.text
-    body.media = ["https://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg"]
+@app.post('/sendMessage')   # Make a POST request to this URL to send a text message.
+def send_message(create_body: CreateBody):
+    message_body = MessageRequest(  # needs to be updated*********
+        to=[create_body.to],
+        _from=BW_NUMBER,
+        application_id=BW_MESSAGING_APPLICATION_ID,
+        text=create_body.text
+    )
+    response = messages_api_instance.create_message(    # needs to be updated*********
+        account_id=BW_ACCOUNT_ID,
+        message_request=message_body,
+        _return_http_data_only=False
+    )
 
-    create_response = messaging_client.create_message(account_id, body=body)
-
-    return create_response.status_code
+    return response[1]
 
 
-@app.post('/callbacks/outbound/messaging/status')
+@app.post('/callbacks/outbound/messaging/status')   # This URL handles outbound message status callbacks.
 async def handle_outbound_status(request: Request):
     status_body_array = await request.json()
     status_body = status_body_array[0]
     if status_body['type'] == "message-sending":
-        print("message-sending type is only for MMS")
+        print("message-sending type is only for MMS.")
     elif status_body['type'] == "message-delivered":
-        print("your message has been handed off to the Bandwidth's MMSC network, but has not been confirmed at the downstream carrier")
+        print("Your message has been handed off to the Bandwidth's MMSC network, but has not been confirmed at the downstream carrier.")
     elif status_body['type'] == "message-failed":
         print("For MMS and Group Messages, you will only receive this callback if you have enabled delivery receipts on MMS.")
     else:
@@ -64,30 +74,29 @@ async def handle_outbound_status(request: Request):
     return 200
 
 
-@app.post('/callbacks/inbound/messaging')
+@app.post('/callbacks/inbound/messaging')   # This URL handles inbound message callbacks.
 async def handle_inbound(request: Request):
     inbound_body_array = await request.json()
-    inbound_body = inbound_body_array[0]
-    print(inbound_body['description'])
-    if inbound_body['type'] != "message-received":
-        print("Message type does not match endpoint. This endpoint is used for inbound messages only.\nOutbound message callbacks should be sent to /callbacks/outbound/messaging.")
-        return 200
+    inbound_body = BandwidthCallbackMessage._new_from_openapi_data(inbound_body_array[0])
+    print(inbound_body.description)
+    if inbound_body.type == "message-received":
+        print("To: {}\nFrom: {}\nText: {}".format(inbound_body.message.to[0], inbound_body.message._from,
+                                                  inbound_body.message.text))
+        
+        if not hasattr(inbound_body.message, "media"):
+            print("No media attached")
+            return 200
 
-    message = inbound_body['message']
-    print(f"From: {message['from']}\nTo: {message['to'][0]}\nText: {message['text']}")
-
-    if "media" not in inbound_body['message']:
-        print("No media attached")
-        return 200
-
-    for media in inbound_body['message']['media']:
-        media_id = media.split("/")[-3:]
-        if ".xml" not in media_id[-1]:
-            filename = "./image" + media_id[-1][media_id[-1].find('.'):]
-            downloaded_media = messaging_client.get_media(account_id, media_id).body
-            img_file = open(filename, "wb")
-            img_file.write(downloaded_media)
-            img_file.close()
+        for media in inbound_body.message.media:
+            media_id = media.split("/")[-3:]
+            if ".xml" not in media_id[-1]:
+                filename = "./image" + media_id[-1][media_id[-1].find('.'):]
+                downloaded_media = media_api_instance.get_media(BW_ACCOUNT_ID, media_id).body
+                img_file = open(filename, "wb")
+                img_file.write(downloaded_media)
+                img_file.close()
+    else:
+        print("Message type does not match endpoint. This endpoint is used for inbound messages only.\nOutbound message status callbacks should be sent to /callbacks/outbound/messaging/status.")
 
     return 200
 
