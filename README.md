@@ -43,7 +43,7 @@ For more information about API credentials see our [Account Credentials](https:/
 Use the following command to run the application:
 
 ```sh
-ruby app.rb
+uvicorn main:app --reload   # app will automatically reload upon changes.
 ```
 
 # Environmental Variables
@@ -54,8 +54,8 @@ The sample app uses the below environmental variables.
 BW_ACCOUNT_ID                        # Your Bandwidth Account Id
 BW_USERNAME                          # Your Bandwidth API Username
 BW_PASSWORD                          # Your Bandwidth API Password
-BW_MESSAGING_APPLICATION_ID          # Your Messaging Application Id created in the dashboard
 BW_NUMBER                            # The Bandwidth phone number involved with this application
+BW_MESSAGING_APPLICATION_ID          # Your Messaging Application Id created in the dashboard
 ```
 
 # Callback URLs
