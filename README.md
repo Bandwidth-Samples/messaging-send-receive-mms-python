@@ -1,4 +1,4 @@
-# Send and Receive SMS
+# Send and Receive MMS
 
 <a href="http://dev.bandwidth.com/docs/messaging/quickStart">
   <img src="./icon-messaging.svg" title="Messaging Quick Start Guide" alt="Messaging Quick Start Guide"/>
