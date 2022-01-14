@@ -6,7 +6,7 @@
 
  # Table of Contents
 
-* [Description](#description)                                           UPDATE NEEDED FROM DESCRIPTION HEADER BELOW
+* [Description](#description)
 * [Pre-Requisites](#pre-requisites)
 * [Running the Application](#running-the-application)
 * [Environmental Variables](#environmental-variables)
