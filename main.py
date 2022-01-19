@@ -1,9 +1,10 @@
 import os
+import re
 import json
 
 # ***************needs to be changed when sdk becomes python package
 import sys
-sys.path.insert(0, 'C:/Users/ckoegel/Documents/sdks/python-v1')
+sys.path.insert(0, 'C:/Users/ckoegel/Documents/sdks/python-v2')
 import openapi_client
 from openapi_client.api.messages_api import MessagesApi
 from openapi_client.api.media_api import MediaApi
@@ -84,14 +85,14 @@ async def handle_inbound(request: Request):
                                                   inbound_body.message.text))
         
         if not hasattr(inbound_body.message, "media"):
-            print("No media attached")
             return 200
 
         for media in inbound_body.message.media:
-            media_id = media.split("/")[-3:]
-            if ".xml" not in media_id[-1]:
-                filename = "./image" + media_id[-1][media_id[-1].find('.'):]
-                downloaded_media = media_api_instance.get_media(BW_ACCOUNT_ID, media_id).body
+            media_id = re.search('media/(.+)', media).group(0)
+            media_name = media_id.split('/')[-1]
+            if ".xml" not in media_id:
+                filename = "./" + media_name
+                downloaded_media = media_api_instance.get_media(BW_ACCOUNT_ID, media_id, _preload_content=False).data
                 img_file = open(filename, "wb")
                 img_file.write(downloaded_media)
                 img_file.close()
