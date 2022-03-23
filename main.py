@@ -4,12 +4,12 @@ import json
 
 # ***************needs to be changed when sdk becomes python package
 import sys
-sys.path.insert(0, 'C:/Users/ckoegel/Documents/sdks/python-v2')
-import openapi_client
-from openapi_client.api.messages_api import MessagesApi
-from openapi_client.api.media_api import MediaApi
-from openapi_client.model.message_request import MessageRequest
-from openapi_client.model.bandwidth_callback_message import BandwidthCallbackMessage
+sys.path.insert(0, 'C:/Users/ckoegel/Documents/sdks/bandwidth_python')
+import bandwidth_python
+from bandwidth_python.api.messages_api import MessagesApi
+from bandwidth_python.api.media_api import MediaApi
+from bandwidth_python.model.message_request import MessageRequest
+from bandwidth_python.model.bandwidth_callback_message import BandwidthCallbackMessage
 # ---------------------------------------------------
 
 from fastapi import FastAPI, Request
@@ -28,13 +28,13 @@ class CreateBody(BaseModel):    # model for the received json body to create a m
     text: str
 
 
-configuration = openapi_client.Configuration(     # needs to be updated*********  # Configure HTTP basic authorization: httpBasic
+configuration = bandwidth_python.Configuration(     # needs to be updated*********  # Configure HTTP basic authorization: httpBasic
     username=BW_USERNAME,
     password=BW_PASSWORD
 )
 
 
-api_client = openapi_client.ApiClient(configuration)  # needs to be updated*********
+api_client = bandwidth_python.ApiClient(configuration)  # needs to be updated*********
 messages_api_instance = MessagesApi(api_client) # needs to be updated*********
 media_api_instance = MediaApi(api_client)   # needs to be updated*********
 
@@ -88,7 +88,7 @@ async def handle_inbound(request: Request):
             return 200
 
         for media in inbound_body.message.media:
-            media_id = re.search('media/(.+)', media).group(0)
+            media_id = re.search('media/(.+)', media).group(1)
             media_name = media_id.split('/')[-1]
             if ".xml" not in media_id:
                 filename = "./" + media_name
