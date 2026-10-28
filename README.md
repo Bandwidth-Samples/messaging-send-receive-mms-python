@@ -1,5 +1,8 @@
 # Send and Receive MMS
 
+> [!IMPORTANT]
+> This sample is archived and no longer maintained. Sending and receiving both SMS and MMS is now covered by [messaging-send-receive-python](https://github.com/Bandwidth-Samples/messaging-send-receive-python).
+
 <a href="http://dev.bandwidth.com/docs/messaging/quickStart">
   <img src="./icon-messaging.svg" title="Messaging Quick Start Guide" alt="Messaging Quick Start Guide"/>
 </a>
